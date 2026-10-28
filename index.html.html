@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Air Slice Ninja Academy - Year 1 English Nouns</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- FontAwesome CDN for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- MediaPipe Libraries CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Outfit:wght@400;600;800;900&display=swap');
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #030712;
+            color: #f9fafb;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .ninja-font {
+            font-family: 'Permanent Marker', cursive;
+        }
+
+        /* Neon Glow Effects */
+        .glow-text-cyan {
+            text-shadow: 0 0 10px #06b6d4, 0 0 25px #0891b2;
+        }
+        .glow-text-amber {
+            text-shadow: 0 0 10px #f59e0b, 0 0 25px #d97706;
+        }
+        .glow-text-pink {
+            text-shadow: 0 0 10px #ec4899, 0 0 25px #be185d;
+        }
+        .glow-text-emerald {
+            text-shadow: 0 0 10px #10b981, 0 0 25px #059669;
+        }
+
+        .ninja-card {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.9) 100%);
+            border: 2px solid rgba(6, 182, 212, 0.4);
+            box-shadow: 0 0 30px rgba(6, 182, 212, 0.25), inset 0 0 15px rgba(6, 182, 212, 0.15);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #06b6d4;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="w-screen h-screen flex flex-col items-center justify-center relative bg-slate-950">
+
+    <!-- HIDDEN WEBCAM VIDEO SOURCE FOR MEDIAPIPE -->
+    <video id="webcam" class="hidden" playsinline></video>
+
+    <!-- MAIN GAME DISPLAY AREA -->
+    <div id="game-container" class="relative w-full h-full max-w-7xl max-h-[900px] flex items-center justify-center overflow-hidden md:rounded-3xl border-0 md:border-4 border-cyan-500/30 shadow-[0_0_50px_rgba(6,182,212,0.3)] bg-slate-950">
+
+        <!-- Canvas Layer for Video, Slash Effects, Targets, and Particles -->
+        <canvas id="gameCanvas" class="w-full h-full object-cover"></canvas>
+
+        <!-- TOP GAMEPLAY HUD OVERLAY -->
+        <div id="hud-layer" class="hidden absolute top-0 left-0 right-0 p-4 md:p-6 flex flex-col gap-3 pointer-events-none z-10">
+            <!-- Header Status Bar -->
+            <div class="flex items-center justify-between bg-slate-900/85 backdrop-blur-md px-6 py-3 rounded-2xl border border-cyan-500/30 shadow-xl">
+                <!-- Subject & Level Badge -->
+                <div class="flex items-center gap-3">
+                    <span class="bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 text-xs md:text-sm font-bold px-3 py-1 rounded-full uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-graduation-cap"></i> Year 1 English: Nouns
+                    </span>
+                    <span id="question-tracker" class="text-xs md:text-sm font-extrabold text-amber-300">
+                        Q 1/10
+                    </span>
+                </div>
+
+                <!-- Timer -->
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-stopwatch text-amber-400 animate-pulse text-lg md:text-xl"></i>
+                    <span id="timer-display" class="ninja-font text-2xl md:text-3xl text-amber-400 glow-text-amber">15</span>
+                </div>
+
+                <!-- Combo Multiplier Badge -->
+                <div id="combo-container" class="hidden md:flex items-center gap-1 bg-gradient-to-r from-amber-500/20 to-orange-500/20 px-3 py-1 rounded-full border border-amber-400/40">
+                    <i class="fa-solid fa-bolt text-amber-400 text-sm"></i>
+                    <span id="combo-display" class="ninja-font text-amber-300 text-base">COMBO x1</span>
+                </div>
+
+                <!-- Score & Lives -->
+                <div class="flex items-center gap-6">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-trophy text-amber-400 text-lg"></i>
+                        <span id="score-display" class="ninja-font text-2xl md:text-3xl text-cyan-300 glow-text-cyan">000</span>
+                    </div>
+                    <div id="lives-container" class="flex gap-1.5 text-xl md:text-2xl text-rose-500 filter drop-shadow">
+                        <i class="fa-solid fa-heart animate-bounce"></i>
+                        <i class="fa-solid fa-heart animate-bounce" style="animation-delay: 0.1s;"></i>
+                        <i class="fa-solid fa-heart animate-bounce" style="animation-delay: 0.2s;"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QUESTION DISPLAY BANNER -->
+            <div id="question-card" class="bg-gradient-to-r from-slate-900/90 via-purple-950/90 to-slate-900/90 backdrop-blur-md p-4 md:p-5 rounded-2xl border-2 border-cyan-400/60 shadow-2xl text-center transform transition-all duration-300">
+                <span class="text-xs font-bold uppercase tracking-widest text-cyan-400 block mb-1">SLICE THE CORRECT NOUN BUBBLE!</span>
+                <h2 id="question-text" class="text-xl md:text-3xl font-black text-white tracking-wide">
+                    Loading question...
+                </h2>
+            </div>
+        </div>
+
+        <!-- START SCREEN & TUTORIAL OVERLAY -->
+        <div id="start-screen" class="ui-screen absolute inset-0 z-20 flex flex-col items-center justify-center p-6 bg-slate-950/95 backdrop-blur-xl text-center">
+            <div class="max-w-2xl flex flex-col items-center w-full">
+                <!-- Ninja Icon Header -->
+                <div class="relative mb-3">
+                    <div class="w-24 h-24 rounded-full bg-cyan-500/20 flex items-center justify-center border-2 border-cyan-400/80 animate-pulse">
+                        <i class="fa-solid fa-hand-pointer text-5xl text-cyan-400"></i>
+                    </div>
+                    <div class="absolute -bottom-1 -right-1 w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center text-slate-950 text-xl font-black">
+                        <i class="fa-solid fa-bolt"></i>
+                    </div>
+                </div>
+
+                <h1 class="ninja-font text-4xl md:text-6xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-amber-300 mb-1 glow-text-cyan">
+                    AIR SLICE
+                </h1>
+                <p class="ninja-font text-xl md:text-2xl text-purple-400 tracking-wider mb-6">NINJA ACADEMY</p>
+
+                <!-- Instructions Card -->
+                <div class="ninja-card rounded-2xl p-5 mb-6 text-left space-y-3.5 w-full shadow-2xl">
+                    <h3 class="text-cyan-400 font-extrabold text-center uppercase tracking-wider text-sm border-b border-cyan-500/30 pb-2 mb-2">
+                        <i class="fa-solid fa-scroll mr-2"></i> How To Play
+                    </h3>
+                    <div class="flex items-start gap-3">
+                        <div class="w-7 h-7 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-400/40 flex items-center justify-center font-bold text-sm shrink-0">1</div>
+                        <p class="text-xs md:text-sm text-slate-300"><strong class="text-white">Enable Webcam:</strong> Allow camera access so the ninja sensor can detect your hand gestures.</p>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <div class="w-7 h-7 rounded-full bg-amber-500/20 text-amber-400 border border-amber-400/40 flex items-center justify-center font-bold text-sm shrink-0">2</div>
+                        <p class="text-xs md:text-sm text-slate-300"><strong class="text-white">Point Index Finger:</strong> Hold your index finger up like a blade in front of your camera to control your slice cursor.</p>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <div class="w-7 h-7 rounded-full bg-rose-500/20 text-rose-400 border border-rose-400/40 flex items-center justify-center font-bold text-sm shrink-0">3</div>
+                        <p class="text-xs md:text-sm text-slate-300"><strong class="text-white">Slice Noun Bubbles:</strong> Read the question banner, then slice floating bubbles containing the correct <span class="text-amber-300">People, Animals, Places, or Things</span>!</p>
+                    </div>
+                </div>
+
+                <!-- Start Action Button -->
+                <button id="btn-start" class="group relative px-10 py-4 bg-gradient-to-r from-cyan-400 via-teal-400 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 text-slate-950 font-black text-xl rounded-2xl shadow-[0_0_30px_rgba(6,182,212,0.5)] transition-all duration-300 hover:scale-105 active:scale-95 pointer-events-auto">
+                    <span class="flex items-center gap-3">
+                        <i class="fa-solid fa-play text-slate-950"></i> START NINJA TRAINING
+                    </span>
+                </button>
+                <p id="camera-status" class="text-xs text-slate-400 mt-4 font-semibold flex items-center gap-2">
+                    <i class="fa-solid fa-circle-notch animate-spin text-cyan-400"></i> Initializing MediaPipe Hand Tracking Engine...
+                </p>
+            </div>
+        </div>
+
+        <!-- GAME OVER / GRADUATION RESULTS SCREEN -->
+        <div id="game-over-screen" class="ui-screen hidden absolute inset-0 z-20 flex flex-col items-center justify-center p-6 bg-slate-950/95 backdrop-blur-xl text-center">
+            <div class="max-w-lg w-full bg-slate-900/95 border-2 border-cyan-500/40 p-8 rounded-3xl shadow-[0_0_50px_rgba(6,182,212,0.3)] flex flex-col items-center">
+                <div id="result-badge" class="w-24 h-24 rounded-full bg-amber-500/20 flex items-center justify-center border-2 border-amber-400 mb-4 animate-bounce">
+                    <i id="result-icon" class="fa-solid fa-trophy text-5xl text-amber-400"></i>
+                </div>
+
+                <h2 id="result-title" class="ninja-font text-3xl md:text-5xl text-amber-400 glow-text-amber mb-1">NINJA MASTER!</h2>
+                <p id="result-subtitle" class="text-slate-300 text-sm md:text-base mb-6">You have mastered Year 1 English Nouns!</p>
+
+                <!-- Final Metrics Grid -->
+                <div class="grid grid-cols-2 gap-4 w-full mb-8">
+                    <div class="bg-slate-800/80 p-4 rounded-2xl border border-slate-700/80">
+                        <p class="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Total Score</p>
+                        <p id="final-score" class="ninja-font text-3xl text-cyan-300 glow-text-cyan">0</p>
+                    </div>
+                    <div class="bg-slate-800/80 p-4 rounded-2xl border border-slate-700/80">
+                        <p class="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Accuracy</p>
+                        <p id="final-accuracy" class="ninja-font text-3xl text-emerald-400 glow-text-emerald">100%</p>
+                    </div>
+                </div>
+
+                <!-- Replay Button -->
+                <button id="btn-restart" class="w-full py-4 bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-slate-950 font-black text-lg rounded-2xl shadow-lg hover:shadow-emerald-400/50 transition-all duration-300 hover:scale-105 active:scale-95 pointer-events-auto">
+                    <i class="fa-solid fa-rotate-right mr-2"></i> PLAY AGAIN
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- AUDIO SYNTHESIZER & GAME LOGIC SCRIPT -->
+    <script>
+        /**
+         * WEB AUDIO SYNTHESIZER (No external audio files required)
+         */
+        class SoundFX {
+            constructor() {
+                this.ctx = null;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            // Ninja Slash Noise Effect
+            playSlash() {
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const bufferSize = this.ctx.sampleRate * 0.1;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.setValueAtTime(600, now);
+                filter.frequency.exponentialRampToValueAtTime(3200, now + 0.08);
+
+                const gain = this.ctx.createGain();
+                gain.gain.setValueAtTime(0.35, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                noise.start(now);
+            }
+
+            // Target Pop Effect
+            playPop() {
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(520, now);
+                osc.frequency.exponentialRampToValueAtTime(120, now + 0.07);
+
+                gain.gain.setValueAtTime(0.4, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.07);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.start(now);
+                osc.stop(now + 0.07);
+            }
+
+            // Correct Answer Chime Arpeggio
+            playCorrect() {
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                notes.forEach((freq, i) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.value = freq;
+
+                    gain.gain.setValueAtTime(0.25, now + i * 0.06);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.06 + 0.25);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc.start(now + i * 0.06);
+                    osc.stop(now + i * 0.06 + 0.25);
+                });
+            }
+
+            // Wrong Answer Impact Sound
+            playWrong() {
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.linearRampToValueAtTime(45, now + 0.3);
+
+                gain.gain.setValueAtTime(0.45, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.start(now);
+                osc.stop(now + 0.3);
+            }
+
+            // Victory Fanfare Jingle
+            playVictory() {
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+                notes.forEach((freq, i) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.value = freq;
+
+                    gain.gain.setValueAtTime(0.3, now + i * 0.1);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.4);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc.start(now + i * 0.1);
+                    osc.stop(now + i * 0.1 + 0.4);
+                });
+            }
+        }
+
+        const sound = new SoundFX();
+
+        /**
+         * QUESTION BANK: Year 1 English Language (Nouns - People, Animals, Places, Things)
+         */
+        const QUESTION_BANK = [
+            {
+                question: "Which word is a PERSON?",
+                options: [
+                    { text: "Teacher", correct: true },
+                    { text: "Apple", correct: false },
+                    { text: "Table", correct: false }
+                ]
+            },
+            {
+                question: "Which word is an ANIMAL?",
+                options: [
+                    { text: "Elephant", correct: true },
+                    { text: "Chair", correct: false },
+                    { text: "School", correct: false }
+                ]
+            },
+            {
+                question: "Which word is a PLACE?",
+                options: [
+                    { text: "Park", correct: true },
+                    { text: "Pencil", correct: false },
+                    { text: "Cat", correct: false }
+                ]
+            },
+            {
+                question: "Which word is a THING?",
+                options: [
+                    { text: "Book", correct: true },
+                    { text: "Doctor", correct: false },
+                    { text: "Lion", correct: false }
+                ]
+            },
+            {
+                question: "Which word is a PERSON?",
+                options: [
+                    { text: "Firefighter", correct: true },
+                    { text: "Desk", correct: false },
+                    { text: "River", correct: false }
+                ]
+            },
+            {
+                question: "Which word is an ANIMAL?",
+                options: [
+                    { text: "Monkey", correct: true },
+                    { text: "House", correct: false },
+                    { text: "Ruler", correct: false }
+                ]
+            },
+            {
+                question: "Which word is a PLACE?",
+                options: [
+                    { text: "Hospital", correct: true },
+                    { text: "Banana", correct: false },
+                    { text: "Dog", correct: false }
+                ]
+            },
+            {
+                question: "Which word is a THING?",
+                options: [
+                    { text: "Car", correct: true },
+                    { text: "Nurse", correct: false },
+                    { text: "Zoo", correct: false }
+                ]
+            },
+            {
+                question: "Which word is a PERSON?",
+                options: [
+                    { text: "Student", correct: true },
+                    { text: "Beach", correct: false },
+                    { text: "Shoe", correct: false }
+                ]
+            },
+            {
+                question: "Which word is an ANIMAL?",
+                options: [
+                    { text: "Frog", correct: true },
+                    { text: "Library", correct: false },
+                    { text: "Eraser", correct: false }
+                ]
+            }
+        ];
+
+        /**
+         * GAME STATE VARIABLES
+         */
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const videoElement = document.getElementById('webcam');
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let lives = 3;
+        let combo = 1;
+        let questionTimeLeft = 15;
+        let questionTimerInterval = null;
+        let gameActive = false;
+        let totalAnswered = 0;
+        let correctAnswersCount = 0;
+
+        // Blade trail tracking
+        let bladePath = [];
+        const MAX_BLADE_POINTS = 14;
+
+        // Game Entities
+        let targets = [];
+        let particles = [];
+        let floatingFeedbacks = [];
+
+        // Canvas Responsive Sizing
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        /**
+         * TARGET BUBBLE CLASS
+         */
+        class TargetBubble {
+            constructor(text, isCorrect, x, y, radius) {
+                this.text = text;
+                this.isCorrect = isCorrect;
+                this.x = x;
+                this.y = y;
+                this.radius = radius;
+
+                // Physics motion (floating upwards/bouncing)
+                this.vx = (Math.random() - 0.5) * 3.5;
+                this.vy = -(Math.random() * 2 + 3);
+                this.gravity = 0.05;
+
+                // Vibrant Neon Colors
+                this.hue = isCorrect ? 175 : (Math.random() > 0.5 ? 330 : 45); // Cyan (correct) vs Magenta/Gold
+                this.pulse = Math.random() * Math.PI * 2;
+                this.isSliced = false;
+            }
+
+            update() {
+                this.vy += this.gravity;
+                this.x += this.vx;
+                this.y += this.vy;
+                this.pulse += 0.06;
+
+                // Wall bounds bounce
+                if (this.x - this.radius < 10 || this.x + this.radius > canvas.width - 10) {
+                    this.vx *= -1;
+                }
+            }
+
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+
+                const pulseScale = 1 + Math.sin(this.pulse) * 0.05;
+                const r = this.radius * pulseScale;
+
+                // Bubble Glow Radial Background
+                const grad = ctx.createRadialGradient(0, 0, r * 0.2, 0, 0, r);
+                grad.addColorStop(0, `hsla(${this.hue}, 95%, 70%, 0.95)`);
+                grad.addColorStop(0.65, `hsla(${this.hue}, 85%, 45%, 0.75)`);
+                grad.addColorStop(1, `hsla(${this.hue}, 100%, 30%, 0.3)`);
+
+                ctx.beginPath();
+                ctx.arc(0, 0, r, 0, Math.PI * 2);
+                ctx.fillStyle = grad;
+                ctx.fill();
+
+                // Bright Neon Border
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = `hsla(${this.hue}, 100%, 80%, 0.95)`;
+                ctx.shadowColor = `hsla(${this.hue}, 100%, 50%, 0.8)`;
+                ctx.shadowBlur = 12;
+                ctx.stroke();
+
+                // Glass Specular Highlight
+                ctx.beginPath();
+                ctx.arc(-r * 0.32, -r * 0.32, r * 0.25, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+                ctx.shadowBlur = 0;
+                ctx.fill();
+
+                // Text Label
+                ctx.fillStyle = '#ffffff';
+                ctx.font = `900 ${Math.max(16, r * 0.32)}px 'Outfit', sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+                ctx.shadowBlur = 8;
+                ctx.fillText(this.text, 0, 0);
+
+                ctx.restore();
+            }
+        }
+
+        /**
+         * EXPLOSION SPARK PARTICLES
+         */
+        class Particle {
+            constructor(x, y, hue) {
+                this.x = x;
+                this.y = y;
+                this.hue = hue;
+                this.radius = Math.random() * 6 + 2;
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 10 + 3;
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+                this.alpha = 1;
+                this.decay = Math.random() * 0.03 + 0.02;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.15; // Gravity
+                this.alpha -= this.decay;
+            }
+
+            draw(ctx) {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, this.alpha);
+                ctx.fillStyle = `hsl(${this.hue}, 100%, 65%)`;
+                ctx.shadowColor = `hsl(${this.hue}, 100%, 50%)`;
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        /**
+         * FLOATING TEXT FEEDBACK
+         */
+        class FloatingFeedback {
+            constructor(text, x, y, color) {
+                this.text = text;
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.alpha = 1;
+                this.vy = -2.5;
+            }
+
+            update() {
+                this.y += this.vy;
+                this.alpha -= 0.025;
+            }
+
+            draw(ctx) {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, this.alpha);
+                ctx.font = "900 28px 'Permanent Marker', cursive";
+                ctx.fillStyle = this.color;
+                ctx.shadowColor = 'black';
+                ctx.shadowBlur = 10;
+                ctx.textAlign = 'center';
+                ctx.fillText(this.text, this.x, this.y);
+                ctx.restore();
+            }
+        }
+
+        /**
+         * QUESTION SPAWNER
+         */
+        function loadNextQuestion() {
+            if (currentQuestionIndex >= QUESTION_BANK.length) {
+                endGame(true);
+                return;
+            }
+
+            const currentQ = QUESTION_BANK[currentQuestionIndex];
+            document.getElementById('question-text').innerText = currentQ.question;
+            document.getElementById('question-tracker').innerText = `Q ${currentQuestionIndex + 1}/${QUESTION_BANK.length}`;
+
+            // Reset Timer
+            clearInterval(questionTimerInterval);
+            questionTimeLeft = 15;
+            document.getElementById('timer-display').innerText = questionTimeLeft;
+            questionTimerInterval = setInterval(() => {
+                if (!gameActive) return;
+                questionTimeLeft--;
+                document.getElementById('timer-display').innerText = questionTimeLeft;
+
+                if (questionTimeLeft <= 0) {
+                    handleWrongAnswer(canvas.width / 2, canvas.height / 2, "TIME OUT!");
+                }
+            }, 1000);
+
+            // Spawn Option Bubbles
+            targets = [];
+            const shuffledOptions = [...currentQ.options].sort(() => Math.random() - 0.5);
+            const radius = Math.min(canvas.width, canvas.height) * 0.08 + 25;
+            const spacing = canvas.width / (shuffledOptions.length + 1);
+
+            shuffledOptions.forEach((opt, index) => {
+                const spawnX = spacing * (index + 1);
+                const spawnY = canvas.height + radius + (Math.random() * 40);
+                targets.push(new TargetBubble(opt.text, opt.correct, spawnX, spawnY, radius));
+            });
+        }
+
+        /**
+         * SLICE INTERSECTION DETECTOR
+         */
+        function checkBladeIntersections() {
+            if (bladePath.length < 2) return;
+
+            const p1 = bladePath[bladePath.length - 1]; // Latest tip pos
+            const p2 = bladePath[bladePath.length - 2];
+
+            // Blade motion speed check
+            const distMoved = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+            if (distMoved > 9) {
+                sound.playSlash();
+            }
+
+            targets.forEach(target => {
+                if (target.isSliced) return;
+
+                const distToTarget = distanceToSegment(target, p1, p2);
+                if (distToTarget < target.radius) {
+                    target.isSliced = true;
+                    createExplosion(target.x, target.y, target.hue);
+                    sound.playPop();
+
+                    totalAnswered++;
+
+                    if (target.isCorrect) {
+                        correctAnswersCount++;
+                        const pointsGained = (100 + questionTimeLeft * 10) * combo;
+                        score += pointsGained;
+                        combo++;
+
+                        document.getElementById('score-display').innerText = String(score).padStart(3, '0');
+                        updateComboUI();
+                        sound.playCorrect();
+
+                        floatingFeedbacks.push(new FloatingFeedback(`+${pointsGained} SLICE!`, target.x, target.y, '#34d399'));
+                        setTimeout(loadNextQuestion, 600);
+                    } else {
+                        combo = 1;
+                        updateComboUI();
+                        handleWrongAnswer(target.x, target.y, "OUCH!");
+                    }
+                }
+            });
+        }
+
+        function updateComboUI() {
+            const comboContainer = document.getElementById('combo-container');
+            const comboDisplay = document.getElementById('combo-display');
+            if (combo > 1) {
+                comboContainer.classList.remove('hidden');
+                comboDisplay.innerText = `COMBO x${combo}`;
+            } else {
+                comboContainer.classList.add('hidden');
+            }
+        }
+
+        function handleWrongAnswer(x, y, label) {
+            lives--;
+            updateLivesUI();
+            sound.playWrong();
+            floatingFeedbacks.push(new FloatingFeedback(label, x, y, '#f43f5e'));
+
+            if (lives <= 0) {
+                endGame(false);
+            } else {
+                currentQuestionIndex++;
+                setTimeout(loadNextQuestion, 600);
+            }
+        }
+
+        function updateLivesUI() {
+            const container = document.getElementById('lives-container');
+            container.innerHTML = '';
+            for (let i = 0; i < 3; i++) {
+                if (i < lives) {
+                    container.innerHTML += `<i class="fa-solid fa-heart animate-bounce" style="animation-delay: ${i * 0.1}s;"></i>`;
+                } else {
+                    container.innerHTML += `<i class="fa-solid fa-heart text-slate-700"></i>`;
+                }
+            }
+        }
+
+        function createExplosion(x, y, hue) {
+            for (let i = 0; i < 30; i++) {
+                particles.push(new Particle(x, y, hue));
+            }
+        }
+
+        // Distance from point to line segment
+        function distanceToSegment(p, v, w) {
+            const l2 = (v.x - w.x) ** 2 + (v.y - w.y) ** 2;
+            if (l2 === 0) return Math.hypot(p.x - v.x, p.y - v.y);
+            let t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+            t = Math.max(0, Math.min(1, t));
+            return Math.hypot(p.x - (v.x + t * (w.x - v.x)), p.y - (v.y + t * (w.y - v.y)));
+        }
+
+        /**
+         * RENDER & ANIMATION LOOP
+         */
+        function render() {
+            // Render Mirrored Video Frame
+            ctx.save();
+            ctx.scale(-1, 1);
+            ctx.drawImage(videoElement, -canvas.width, 0, canvas.width, canvas.height);
+            ctx.restore();
+
+            // Dark semi-transparent overlay for crisp text readability
+            ctx.fillStyle = 'rgba(3, 7, 18, 0.55)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (gameActive) {
+                // Update & Render Target Bubbles
+                for (let i = targets.length - 1; i >= 0; i--) {
+                    const t = targets[i];
+                    t.update();
+                    if (!t.isSliced) t.draw(ctx);
+
+                    // Off-screen bottom cleanup
+                    if (t.y > canvas.height + t.radius + 120 && t.vy > 0) {
+                        targets.splice(i, 1);
+                    }
+                }
+
+                // Check Slicing Collision
+                checkBladeIntersections();
+
+                // Draw Neon Ninja Blade Trail
+                if (bladePath.length > 1) {
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.moveTo(bladePath[0].x, bladePath[0].y);
+                    for (let i = 1; i < bladePath.length; i++) {
+                        ctx.lineTo(bladePath[i].x, bladePath[i].y);
+                    }
+
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+
+                    // Glow outer
+                    ctx.strokeStyle = '#06b6d4';
+                    ctx.lineWidth = 14;
+                    ctx.shadowColor = '#06b6d4';
+                    ctx.shadowBlur = 18;
+                    ctx.stroke();
+
+                    // Inner bright core
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 5;
+                    ctx.shadowBlur = 0;
+                    ctx.stroke();
+
+                    ctx.restore();
+                }
+
+                // Render Particles
+                particles.forEach((p, idx) => {
+                    p.update();
+                    p.draw(ctx);
+                    if (p.alpha <= 0) particles.splice(idx, 1);
+                });
+
+                // Render Floating Feedback Text
+                floatingFeedbacks.forEach((f, idx) => {
+                    f.update();
+                    f.draw(ctx);
+                    if (f.alpha <= 0) floatingFeedbacks.splice(idx, 1);
+                });
+            }
+
+            requestAnimationFrame(render);
+        }
+
+        /**
+         * MEDIAPIPE HAND TRACKING ENGINE
+         */
+        const hands = new Hands({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+        });
+
+        hands.setOptions({
+            maxNumHands: 1,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.65,
+            minTrackingConfidence: 0.65
+        });
+
+        hands.onResults((results) => {
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                const landmarks = results.multiHandLandmarks[0];
+                const indexTip = landmarks[8]; // Index Finger Tip Landmark
+
+                // Coordinate mirroring
+                const rawX = (1 - indexTip.x) * canvas.width;
+                const rawY = indexTip.y * canvas.height;
+
+                bladePath.push({ x: rawX, y: rawY });
+                if (bladePath.length > MAX_BLADE_POINTS) {
+                    bladePath.shift();
+                }
+            } else {
+                bladePath = [];
+            }
+        });
+
+        // Initialize Camera
+        const camera = new Camera(videoElement, {
+            onFrame: async () => {
+                await hands.send({ image: videoElement });
+            },
+            width: 1280,
+            height: 720
+        });
+
+        /**
+         * CONTROLS & EVENT LISTENERS
+         */
+        document.getElementById('btn-start').addEventListener('click', () => {
+            sound.init();
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('hud-layer').classList.remove('hidden');
+
+            score = 0;
+            lives = 3;
+            combo = 1;
+            currentQuestionIndex = 0;
+            totalAnswered = 0;
+            correctAnswersCount = 0;
+
+            updateLivesUI();
+            updateComboUI();
+            document.getElementById('score-display').innerText = '000';
+
+            gameActive = true;
+            loadNextQuestion();
+        });
+
+        document.getElementById('btn-restart').addEventListener('click', () => {
+            document.getElementById('game-over-screen').classList.add('hidden');
+            document.getElementById('start-screen').classList.remove('hidden');
+        });
+
+        function endGame(isVictory) {
+            gameActive = false;
+            clearInterval(questionTimerInterval);
+
+            const gameOverScreen = document.getElementById('game-over-screen');
+            const title = document.getElementById('result-title');
+            const subtitle = document.getElementById('result-subtitle');
+            const badge = document.getElementById('result-badge');
+            const icon = document.getElementById('result-icon');
+
+            if (isVictory) {
+                sound.playVictory();
+                title.innerText = "NINJA MASTER!";
+                title.className = "ninja-font text-3xl md:text-5xl text-amber-400 glow-text-amber mb-1";
+                subtitle.innerText = "Awesome job! You mastered Year 1 English Nouns!";
+                badge.className = "w-24 h-24 rounded-full bg-amber-500/20 flex items-center justify-center border-2 border-amber-400 mb-4 animate-bounce";
+                icon.className = "fa-solid fa-trophy text-5xl text-amber-400";
+            } else {
+                title.innerText = "ACADEMY DEFEAT";
+                title.className = "ninja-font text-3xl md:text-5xl text-rose-500 glow-text-pink mb-1";
+                subtitle.innerText = "You ran out of lives. Keep practicing your nouns!";
+                badge.className = "w-24 h-24 rounded-full bg-rose-500/20 flex items-center justify-center border-2 border-rose-400 mb-4 animate-bounce";
+                icon.className = "fa-solid fa-shield-halved text-5xl text-rose-400";
+            }
+
+            const accuracy = totalAnswered > 0 ? Math.round((correctAnswersCount / totalAnswered) * 100) : 0;
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('final-accuracy').innerText = `${accuracy}%`;
+
+            gameOverScreen.classList.remove('hidden');
+        }
+
+        // Initialize WebCam & Animation Loop on Window Load
+        window.onload = () => {
+            camera.start()
+                .then(() => {
+                    document.getElementById('camera-status').innerHTML = '<i class="fa-solid fa-circle-check text-emerald-400"></i> Webcam active & MediaPipe tracking ready!';
+                    document.getElementById('camera-status').className = "text-xs text-emerald-400 font-bold mt-4 flex items-center gap-2";
+                })
+                .catch((err) => {
+                    console.error(err);
+                    document.getElementById('camera-status').innerHTML = '<i class="fa-solid fa-circle-exclamation text-rose-400"></i> Webcam access denied or not found.';
+                    document.getElementById('camera-status').className = "text-xs text-rose-400 font-bold mt-4 flex items-center gap-2";
+                });
+
+            render();
+        };
+    </script>
+</body>
+</html>
